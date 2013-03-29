@@ -18,6 +18,7 @@
 #include "VTKViewer.h"
 #include <vtkPolyData.h>
 #include <vtkPolyDataReader.h>
+#include <vtkPLYReader.h>
 #include <vtkXMLPolyDataReader.h>
 #include <vtkRenderWindow.h>
 #include <vtkPolyDataMapper.h>
@@ -82,9 +83,17 @@ void VTKViewer::add(const char * file_name)
     reader->Update();
     polyData->ShallowCopy(reader->GetOutput());
     }
+  else if (filename.endsWith(".ply") || filename.endsWith(".PLY"))
+    {
+    vtkSmartPointer< vtkPLYReader > reader =
+      vtkSmartPointer< vtkPLYReader >::New();
+    reader->SetFileName(file_name);
+    reader->Update();
+    polyData->ShallowCopy(reader->GetOutput());
+    }
   else
     {
-    assert("BAD FILE NAME.  Should end in VTK or VTP. "&&0);
+    assert("BAD FILE NAME.  Should end in VTK, VTP, or PLY." && 0);
     return;
     }
   this->add(polyData);
