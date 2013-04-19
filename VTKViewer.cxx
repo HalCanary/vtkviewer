@@ -1,6 +1,6 @@
 // VTK Viewer
-// Written 2012 Hal Canary <http://cs.unc.edu/~hal>
-// Copyright 2012 University of North Carolina at Chapel Hill.
+// Written 2012-2013 Hal Canary <http://cs.unc.edu/~hal>
+// Copyright 2012-2013 University of North Carolina at Chapel Hill.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you
 // may not use this file except in compliance with the License.  You
@@ -23,6 +23,7 @@
 #include <vtkRenderWindow.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
+#include <vtkColorTransferFunction.h>
 #include <vtkVersion.h>
 #if VTK_MAJOR_VERSION <= 5
   #define setInputData(x,y) ((x)->SetInput(y))
@@ -52,9 +53,19 @@ VTKViewer::VTKViewer() :
 }
 void VTKViewer::add(vtkPolyData * polyData)
 {
+  double range[2];
+  polyData->GetScalarRange(range);
+  vtkSmartPointer< vtkColorTransferFunction > colorMap
+    = vtkSmartPointer< vtkColorTransferFunction >::New();
+  colorMap->SetColorSpaceToLab();
+  colorMap->AddRGBPoint(range[0], 0.865, 0.865, 0.865);
+  colorMap->AddRGBPoint(range[1], 0.706, 0.016, 0.150);
+  colorMap->Build();
+
   vtkSmartPointer < vtkPolyDataMapper > mapper =
     vtkSmartPointer < vtkPolyDataMapper >::New();
   setInputData(mapper, polyData);
+  mapper->SetLookupTable(colorMap);
   vtkSmartPointer < vtkActor > actor =
     vtkSmartPointer < vtkActor >::New();
   actor->GetProperty()->SetPointSize(3);
