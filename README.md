@@ -28,8 +28,8 @@ Example installation instructions:
     $ sudo apt-get install -y libvtk5.8-qt4 libvtk5.8 libqtgui4 cmake
     $ git clone git://github.com/HalCanary/vtkviewer.git
     $ vtkviewer/posix_build.sh
-    $ wget http://www.itk.org/Wiki/images/7/72/Bunny.vtp
-    $ vtkviewer/build/vtkviewer Bunny.vtp
+    $ wget http://bit.ly/15vy2Rf -O bun_zipper.ply
+    $ vtkviewer/build/vtkviewer bun_zipper.ply
 
 Controls:
 ---------
