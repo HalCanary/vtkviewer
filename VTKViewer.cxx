@@ -26,6 +26,7 @@
 #include <vtkColorTransferFunction.h>
 #include <vtkPolyDataNormals.h>
 #include <vtkPointData.h>
+#include <vtkOBJReader.h>
 #include <vtkVersion.h>
 #if VTK_MAJOR_VERSION <= 5
   #define setInputData(x,y) ((x)->SetInput(y))
@@ -111,6 +112,14 @@ void VTKViewer::add(const char * file_name)
     {
     vtkSmartPointer< vtkPLYReader > reader =
       vtkSmartPointer< vtkPLYReader >::New();
+    reader->SetFileName(file_name);
+    reader->Update();
+    polyData->ShallowCopy(reader->GetOutput());
+    }
+  else if (filename.endsWith(".obj") || filename.endsWith(".OBJ"))
+    {
+    vtkSmartPointer< vtkOBJReader > reader =
+      vtkSmartPointer< vtkOBJReader >::New();
     reader->SetFileName(file_name);
     reader->Update();
     polyData->ShallowCopy(reader->GetOutput());
