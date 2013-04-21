@@ -1,6 +1,8 @@
 VTK Viewer
 ==========
 
+![VTK Viewer screenshot](http://halcanary.org/images/vtkviewer.png)
+
 Written 2012-2013 Hal Canary <http://cs.unc.edu/~hal>  
 Copyright 2012-2013 University of North Carolina at Chapel Hill.
 
