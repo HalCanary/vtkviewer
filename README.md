@@ -17,11 +17,12 @@ Supported File Formats
 ----------------------
 
 *	VTK — VTK Legacy File
-*	VTP — VTK New-Style File
+*	VTP — VTK Polygonal Data File
 *	PLY — Stanford Polygon File
 *	OBJ — Wavefront Object file
 *	STL — Stereolithography File
 *	PDB — Protein Data Bank File
+*	VTU — VTK Unstructured Grid Data File
 
 Required Packages:
 ------------------

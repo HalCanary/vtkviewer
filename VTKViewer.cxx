@@ -33,6 +33,8 @@
 #include <vtkTubeFilter.h>
 #include <vtkAppendPolyData.h>
 #include <vtkSTLReader.h>
+#include <vtkDataSetSurfaceFilter.h>
+#include <vtkXMLUnstructuredGridReader.h>
 #include <vtkVersion.h>
 #if VTK_MAJOR_VERSION <= 5
   #define setInputData(x,y) ((x)->SetInput(y))
@@ -141,8 +143,8 @@ void VTKViewer::add(const char * file_name)
   // TODO:  add logic for other file formats.
   vtkSmartPointer < vtkPolyData > polyData =
     vtkSmartPointer< vtkPolyData >::New();
-  QString filename = QString::fromUtf8(file_name);
-  if (filename.endsWith(".vtp") || filename.endsWith(".VTP"))
+  QString filename = QString::fromUtf8(file_name).toLower();
+  if (filename.endsWith(".vtp"))
     {
     vtkSmartPointer< vtkXMLPolyDataReader > reader =
       vtkSmartPointer< vtkXMLPolyDataReader >::New();
@@ -150,7 +152,7 @@ void VTKViewer::add(const char * file_name)
     reader->Update();
     polyData->ShallowCopy(reader->GetOutput());
     }
-  else if (filename.endsWith(".vtk") || filename.endsWith(".VTK"))
+  else if (filename.endsWith(".vtk"))
     {
     vtkSmartPointer< vtkPolyDataReader > reader =
       vtkSmartPointer< vtkPolyDataReader >::New();
@@ -158,7 +160,7 @@ void VTKViewer::add(const char * file_name)
     reader->Update();
     polyData->ShallowCopy(reader->GetOutput());
     }
-  else if (filename.endsWith(".ply") || filename.endsWith(".PLY"))
+  else if (filename.endsWith(".ply"))
     {
     vtkSmartPointer< vtkPLYReader > reader =
       vtkSmartPointer< vtkPLYReader >::New();
@@ -166,7 +168,7 @@ void VTKViewer::add(const char * file_name)
     reader->Update();
     polyData->ShallowCopy(reader->GetOutput());
     }
-  else if (filename.endsWith(".obj") || filename.endsWith(".OBJ"))
+  else if (filename.endsWith(".obj"))
     {
     vtkSmartPointer< vtkOBJReader > reader =
       vtkSmartPointer< vtkOBJReader >::New();
@@ -174,7 +176,7 @@ void VTKViewer::add(const char * file_name)
     reader->Update();
     polyData->ShallowCopy(reader->GetOutput());
     }
-  else if (filename.endsWith(".stl") || filename.endsWith(".STL"))
+  else if (filename.endsWith(".stl"))
     {
     vtkSmartPointer< vtkSTLReader > reader =
       vtkSmartPointer< vtkSTLReader >::New();
@@ -182,14 +184,27 @@ void VTKViewer::add(const char * file_name)
     reader->Update();
     polyData->ShallowCopy(reader->GetOutput());
     }
-  else if (filename.endsWith(".pdb") || filename.endsWith(".PDB"))
+  else if (filename.endsWith(".vtu"))
+    {
+    vtkSmartPointer< vtkXMLUnstructuredGridReader > reader =
+      vtkSmartPointer< vtkXMLUnstructuredGridReader >::New();
+    reader->SetFileName(file_name);
+    reader->Update();
+
+    vtkSmartPointer< vtkDataSetSurfaceFilter > geometryFilter =
+      vtkSmartPointer< vtkDataSetSurfaceFilter >::New();
+    geometryFilter->SetInputConnection(reader->GetOutputPort());
+    geometryFilter->Update();
+    polyData->ShallowCopy(geometryFilter->GetOutput());
+    }
+  else if (filename.endsWith(".pdb"))
     {
     ReadPDB(file_name, polyData);
     }
   else
     {
     std::cerr << file_name
-      << ": BAD FILE NAME.  Should end in VTK, VTP, PLY, OBJ, STL, or PDB.\n";
+      << ": BAD FILE NAME.  Should end in VTK, VTP, PLY, OBJ, STL, VTU, or PDB.\n";
     exit(1);
     return;
     }
