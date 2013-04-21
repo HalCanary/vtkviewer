@@ -27,6 +27,11 @@
 #include <vtkPolyDataNormals.h>
 #include <vtkPointData.h>
 #include <vtkOBJReader.h>
+#include <vtkPDBReader.h>
+#include <vtkSphereSource.h>
+#include <vtkGlyph3D.h>
+#include <vtkTubeFilter.h>
+#include <vtkAppendPolyData.h>
 #include <vtkSTLReader.h>
 #include <vtkVersion.h>
 #if VTK_MAJOR_VERSION <= 5
@@ -38,6 +43,50 @@
 
 #include <iostream>
 using std::cout;
+
+static void ReadPDB(const char * file_name, vtkPolyData * polyData)
+{
+  vtkSmartPointer<vtkPDBReader> pdb =
+    vtkSmartPointer<vtkPDBReader>::New();
+  pdb->SetFileName(file_name);
+  pdb->SetHBScale(1.0);
+  pdb->SetBScale(1.0);
+  pdb->Update();
+
+  vtkSmartPointer<vtkSphereSource> sphere =
+    vtkSmartPointer<vtkSphereSource>::New();
+  sphere->SetCenter(0, 0, 0);
+  sphere->SetRadius(1);
+
+  vtkSmartPointer<vtkGlyph3D> glyph =
+    vtkSmartPointer<vtkGlyph3D>::New();
+  glyph->SetInputConnection(pdb->GetOutputPort());
+  glyph->SetSourceConnection(sphere->GetOutputPort());
+  glyph->SetOrient(1);
+  glyph->SetColorMode(1);
+  glyph->SetScaleMode(2);
+  glyph->SetScaleFactor(.25);
+  glyph->Update();
+
+  vtkSmartPointer<vtkTubeFilter> tube =
+    vtkSmartPointer<vtkTubeFilter>::New();
+  tube->SetInputConnection(pdb->GetOutputPort());
+  tube->SetNumberOfSides(6);
+  tube->CappingOff();
+  tube->SetRadius(0.2);
+  tube->SetVaryRadius(0);
+  tube->SetRadiusFactor(10);
+  tube->Update();
+
+  vtkSmartPointer< vtkAppendPolyData > appendFilter =
+    vtkSmartPointer< vtkAppendPolyData >::New();
+  appendFilter->AddInputConnection(glyph->GetOutputPort());
+  appendFilter->AddInputConnection(tube->GetOutputPort());
+  appendFilter->Update();
+
+  polyData->ShallowCopy(appendFilter->GetOutput());
+  return;
+}
 
 VTKViewer::VTKViewer() :
   renderer(vtkSmartPointer < vtkRenderer >::New())
@@ -133,10 +182,14 @@ void VTKViewer::add(const char * file_name)
     reader->Update();
     polyData->ShallowCopy(reader->GetOutput());
     }
+  else if (filename.endsWith(".pdb") || filename.endsWith(".PDB"))
+    {
+    ReadPDB(file_name, polyData);
+    }
   else
     {
     std::cerr << file_name
-      << ": BAD FILE NAME.  Should end in VTK, VTP, PLY, OBJ, or STL.\n";
+      << ": BAD FILE NAME.  Should end in VTK, VTP, PLY, OBJ, STL, or PDB.\n";
     exit(1);
     return;
     }
@@ -188,3 +241,4 @@ void VTKViewer::changeStereoType()
     }
   rw->Render();
 }
+
