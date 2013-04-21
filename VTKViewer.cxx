@@ -27,6 +27,7 @@
 #include <vtkPolyDataNormals.h>
 #include <vtkPointData.h>
 #include <vtkOBJReader.h>
+#include <vtkSTLReader.h>
 #include <vtkVersion.h>
 #if VTK_MAJOR_VERSION <= 5
   #define setInputData(x,y) ((x)->SetInput(y))
@@ -124,9 +125,19 @@ void VTKViewer::add(const char * file_name)
     reader->Update();
     polyData->ShallowCopy(reader->GetOutput());
     }
+  else if (filename.endsWith(".stl") || filename.endsWith(".STL"))
+    {
+    vtkSmartPointer< vtkSTLReader > reader =
+      vtkSmartPointer< vtkSTLReader >::New();
+    reader->SetFileName(file_name);
+    reader->Update();
+    polyData->ShallowCopy(reader->GetOutput());
+    }
   else
     {
-    assert("BAD FILE NAME.  Should end in VTK, VTP, or PLY." && 0);
+    std::cerr << file_name
+      << ": BAD FILE NAME.  Should end in VTK, VTP, PLY, OBJ, or STL.\n";
+    exit(1);
     return;
     }
   this->add(polyData);
