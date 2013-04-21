@@ -17,6 +17,7 @@
 
 #include "VTKViewer.h"
 #include <vtkPolyData.h>
+#include <vtkDataSetReader.h>
 #include <vtkPolyDataReader.h>
 #include <vtkPLYReader.h>
 #include <vtkXMLPolyDataReader.h>
@@ -90,6 +91,46 @@ static void ReadPDB(const char * file_name, vtkPolyData * polyData)
   return;
 }
 
+static void ConvertUnstructuredGridToPolyData(vtkAlgorithmOutput * outputPort, vtkPolyData * polyData)
+{
+  vtkSmartPointer< vtkDataSetSurfaceFilter > dataSetSurfaceFilter =
+    vtkSmartPointer< vtkDataSetSurfaceFilter >::New();
+  dataSetSurfaceFilter->SetInputConnection(outputPort);
+  dataSetSurfaceFilter->Update();
+  polyData->ShallowCopy(dataSetSurfaceFilter->GetOutput());
+}
+static void ReadLegacyVTK(const char * file_name, vtkPolyData * polyData)
+{
+  vtkSmartPointer < vtkDataSetReader > reader =
+    vtkSmartPointer < vtkDataSetReader >::New();
+  reader->SetFileName(file_name);
+  reader->Update();
+  if (NULL != reader->GetPolyDataOutput())
+    {
+    polyData->ShallowCopy(reader->GetPolyDataOutput());
+    }
+  else if (NULL != reader->GetUnstructuredGridOutput())
+    {
+    ConvertUnstructuredGridToPolyData(reader->GetOutputPort(), polyData);
+    }
+  else if (NULL != reader->GetStructuredPointsOutput())
+    {
+    std::cerr << "unsupported: vtkStructuredPoints\n";
+    }
+  else if (NULL != reader->GetStructuredGridOutput())
+    {
+    std::cerr << "unsupported: vtkStructuredGrid\n";
+    }
+  else if (NULL != reader->GetRectilinearGridOutput())
+    {
+    std::cerr << "unsupported: vtkRectilinearGrid\n";
+    }
+  else
+    {
+    std::cerr << "unsupported: ????????\n";
+    }
+}
+
 VTKViewer::VTKViewer() :
   renderer(vtkSmartPointer < vtkRenderer >::New())
 {
@@ -138,6 +179,16 @@ void VTKViewer::add(vtkPolyData * polyData)
   actor->SetMapper(mapper);
   this->renderer->AddActor(actor);
 }
+template <typename T>
+static void read(const char * file_name, vtkPolyData * polyData)
+{
+    vtkSmartPointer< T > reader =
+      vtkSmartPointer< T >::New();
+    reader->SetFileName(file_name);
+    reader->Update();
+    polyData->ShallowCopy(reader->GetOutput());
+}
+
 void VTKViewer::add(const char * file_name)
 {
   // TODO:  add logic for other file formats.
@@ -146,43 +197,23 @@ void VTKViewer::add(const char * file_name)
   QString filename = QString::fromUtf8(file_name).toLower();
   if (filename.endsWith(".vtp"))
     {
-    vtkSmartPointer< vtkXMLPolyDataReader > reader =
-      vtkSmartPointer< vtkXMLPolyDataReader >::New();
-    reader->SetFileName(file_name);
-    reader->Update();
-    polyData->ShallowCopy(reader->GetOutput());
+    read< vtkXMLPolyDataReader >(file_name, polyData);
     }
   else if (filename.endsWith(".vtk"))
     {
-    vtkSmartPointer< vtkPolyDataReader > reader =
-      vtkSmartPointer< vtkPolyDataReader >::New();
-    reader->SetFileName(file_name);
-    reader->Update();
-    polyData->ShallowCopy(reader->GetOutput());
+    ReadLegacyVTK(file_name, polyData);
     }
   else if (filename.endsWith(".ply"))
     {
-    vtkSmartPointer< vtkPLYReader > reader =
-      vtkSmartPointer< vtkPLYReader >::New();
-    reader->SetFileName(file_name);
-    reader->Update();
-    polyData->ShallowCopy(reader->GetOutput());
+    read< vtkPLYReader >(file_name, polyData);
     }
   else if (filename.endsWith(".obj"))
     {
-    vtkSmartPointer< vtkOBJReader > reader =
-      vtkSmartPointer< vtkOBJReader >::New();
-    reader->SetFileName(file_name);
-    reader->Update();
-    polyData->ShallowCopy(reader->GetOutput());
+    read< vtkOBJReader >(file_name, polyData);
     }
   else if (filename.endsWith(".stl"))
     {
-    vtkSmartPointer< vtkSTLReader > reader =
-      vtkSmartPointer< vtkSTLReader >::New();
-    reader->SetFileName(file_name);
-    reader->Update();
-    polyData->ShallowCopy(reader->GetOutput());
+    read< vtkSTLReader >(file_name, polyData);
     }
   else if (filename.endsWith(".vtu"))
     {
@@ -190,12 +221,7 @@ void VTKViewer::add(const char * file_name)
       vtkSmartPointer< vtkXMLUnstructuredGridReader >::New();
     reader->SetFileName(file_name);
     reader->Update();
-
-    vtkSmartPointer< vtkDataSetSurfaceFilter > geometryFilter =
-      vtkSmartPointer< vtkDataSetSurfaceFilter >::New();
-    geometryFilter->SetInputConnection(reader->GetOutputPort());
-    geometryFilter->Update();
-    polyData->ShallowCopy(geometryFilter->GetOutput());
+    ConvertUnstructuredGridToPolyData(reader->GetOutputPort(), polyData);
     }
   else if (filename.endsWith(".pdb"))
     {
