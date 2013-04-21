@@ -34,8 +34,10 @@ Example installation instructions:
 Controls:
 ---------
 
-*	'q' — quit
-*	'r' — toggle rotation
-*	's' — toggle stereo mode
-*	't' — change stereo type
-
+*	's' — surface
+*	'w' — wireframe
+*	'r' — reset and center camera
+*	'ctrl-q' — quit
+*	'ctrl-r' — toggle rotation
+*	'ctrl-s' — toggle stereo mode
+*	'ctrl-t' — change stereo type

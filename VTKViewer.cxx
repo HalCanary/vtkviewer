@@ -24,6 +24,8 @@
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
 #include <vtkColorTransferFunction.h>
+#include <vtkPolyDataNormals.h>
+#include <vtkPointData.h>
 #include <vtkVersion.h>
 #if VTK_MAJOR_VERSION <= 5
   #define setInputData(x,y) ((x)->SetInput(y))
@@ -64,8 +66,19 @@ void VTKViewer::add(vtkPolyData * polyData)
 
   vtkSmartPointer < vtkPolyDataMapper > mapper =
     vtkSmartPointer < vtkPolyDataMapper >::New();
-  setInputData(mapper, polyData);
   mapper->SetLookupTable(colorMap);
+  if (polyData->GetPointData()->GetNormals() == NULL)
+    {
+    vtkSmartPointer< vtkPolyDataNormals > polyDataNormals
+      = vtkSmartPointer< vtkPolyDataNormals >::New();
+    setInputData(polyDataNormals, polyData);
+    polyDataNormals->SetFeatureAngle(90.0);
+    mapper->SetInputConnection(polyDataNormals->GetOutputPort());
+    }
+  else
+    {
+    setInputData(mapper, polyData);
+    }
   vtkSmartPointer < vtkActor > actor =
     vtkSmartPointer < vtkActor >::New();
   actor->GetProperty()->SetPointSize(3);

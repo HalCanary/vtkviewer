@@ -30,16 +30,16 @@ int main(int argc, char ** argv) {
 	mw.setWindowTitle("VTK Viewer");
   VTKViewer v;
 
-  QShortcut q_shortcut(QKeySequence(Qt::Key_Q), &mw);
+  QShortcut q_shortcut(QKeySequence(Qt::CTRL + Qt::Key_Q), &mw);
   QObject::connect(&q_shortcut, SIGNAL(activated()), &mw, SLOT(close()));
 
-  QShortcut r_shortcut(QKeySequence(Qt::Key_R), &mw);
+  QShortcut r_shortcut(QKeySequence(Qt::CTRL + Qt::Key_R), &mw);
   QObject::connect(&r_shortcut, SIGNAL(activated()), &v, SLOT(toggle()));
 
-  QShortcut s_shortcut(QKeySequence(Qt::Key_S), &mw);
+  QShortcut s_shortcut(QKeySequence(Qt::CTRL + Qt::Key_S), &mw);
   QObject::connect(&s_shortcut, SIGNAL(activated()), &v, SLOT(stereo()));
 
-  QShortcut t_shortcut(QKeySequence(Qt::Key_T), &mw);
+  QShortcut t_shortcut(QKeySequence(Qt::CTRL + Qt::Key_T), &mw);
   QObject::connect(&t_shortcut, SIGNAL(activated()), &v, SLOT(changeStereoType()));
 
   mw.setCentralWidget(&v);
