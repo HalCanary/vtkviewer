@@ -36,11 +36,14 @@
 #include <vtkSTLReader.h>
 #include <vtkDataSetSurfaceFilter.h>
 #include <vtkXMLUnstructuredGridReader.h>
+#include <vtkFloatArray.h>
 #include <vtkVersion.h>
 #if VTK_MAJOR_VERSION <= 5
   #define setInputData(x,y) ((x)->SetInput(y))
+  #define addInputData(x,y) ((x)->AddInput(y))
 #else
   #define setInputData(x,y) ((x)->SetInputData(y))
+  #define addInputData(x,y) ((x)->AddInputData(y))
 #endif
 #include <vtkCamera.h>
 
@@ -81,10 +84,23 @@ static void ReadPDB(const char * file_name, vtkPolyData * polyData)
   tube->SetRadiusFactor(10);
   tube->Update();
 
+  vtkSmartPointer< vtkPolyData > tubeMesh =
+    vtkSmartPointer< vtkPolyData >::New();
+  tubeMesh->ShallowCopy(tube->GetOutput());
+  vtkIdType N = tubeMesh->GetNumberOfPoints();
+
+  vtkUnsignedCharArray * rgb_colors
+    = vtkUnsignedCharArray::SafeDownCast(
+      tubeMesh->GetPointData()->GetArray("rgb_colors"));
+  const unsigned char tuple[3] = {127,127,127};
+  if ((rgb_colors != NULL) & (rgb_colors->GetNumberOfComponents() == 3))
+    for (vtkIdType i = 0; i < N ; ++i)
+      rgb_colors->SetTupleValue(i, tuple);
+
   vtkSmartPointer< vtkAppendPolyData > appendFilter =
     vtkSmartPointer< vtkAppendPolyData >::New();
   appendFilter->AddInputConnection(glyph->GetOutputPort());
-  appendFilter->AddInputConnection(tube->GetOutputPort());
+  addInputData(appendFilter, tubeMesh);
   appendFilter->Update();
 
   polyData->ShallowCopy(appendFilter->GetOutput());
@@ -134,6 +150,7 @@ static void ReadLegacyVTK(const char * file_name, vtkPolyData * polyData)
 VTKViewer::VTKViewer() :
   renderer(vtkSmartPointer < vtkRenderer >::New())
 {
+  std::cerr << 'x' << '\n';
   vtkSmartPointer < vtkRenderWindow > renderWindow =
     vtkSmartPointer < vtkRenderWindow >::New();
   renderWindow->StereoCapableWindowOn();
@@ -147,6 +164,7 @@ VTKViewer::VTKViewer() :
   connect(&(this->timer), SIGNAL(timeout()), this, SLOT(rotate()));
   this->timer.start(66);
 }
+
 void VTKViewer::add(vtkPolyData * polyData)
 {
   double range[2];
