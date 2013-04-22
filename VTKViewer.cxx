@@ -150,7 +150,6 @@ static void ReadLegacyVTK(const char * file_name, vtkPolyData * polyData)
 VTKViewer::VTKViewer() :
   renderer(vtkSmartPointer < vtkRenderer >::New())
 {
-  std::cerr << 'x' << '\n';
   vtkSmartPointer < vtkRenderWindow > renderWindow =
     vtkSmartPointer < vtkRenderWindow >::New();
   renderWindow->StereoCapableWindowOn();
