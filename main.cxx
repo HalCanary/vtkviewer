@@ -25,6 +25,30 @@
 #include "VTKViewer.h"
 
 int main(int argc, char ** argv) {
+  if (argc == 1)
+    {
+    std::cerr
+      << "\nUseage:  \n  " << argv[0]
+      << " FILE [MORE FILES...]\n"
+      "Supported File Formats:\n"
+      "  *.vtk - VTK Legacy File\n"
+      "  *.vtp - VTK Polygonal Data File\n"
+      "  *.ply - Stanford Polygon File\n"
+      "  *.obj - Wavefront Object file\n"
+      "  *.stl - Stereolithography File\n"
+      "  *.pdb - Protein Data Bank File\n"
+      "  *.vtu - VTK Unstructured Grid Data File\n"
+      "Controls:\n"
+      "  's' - surface\n"
+      "  'w' - wireframe\n"
+      "  'r' - reset and center camera\n"
+      "  'ctrl-q' - quit\n"
+      "  'ctrl-r' - toggle rotation\n"
+      "  'ctrl-s' - toggle stereo mode\n"
+      "  'ctrl-t' - change stereo type\n\n";
+    return 1;
+    }
+  
   QApplication app(argc, argv);
   QMainWindow mw;
 	mw.setWindowTitle("VTK Viewer");
