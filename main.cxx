@@ -45,7 +45,9 @@ int main(int argc, char ** argv) {
       "  'ctrl-q' - quit\n"
       "  'ctrl-r' - toggle rotation\n"
       "  'ctrl-s' - toggle stereo mode\n"
-      "  'ctrl-t' - change stereo type\n\n";
+      "  'ctrl-t' - change stereo type\n"
+      "More Info:\n"
+      "  https://github.com/HalCanary/vtkviewer\n\n";
     return 1;
     }
   
