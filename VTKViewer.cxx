@@ -107,7 +107,9 @@ static void ReadPDB(const char * file_name, vtkPolyData * polyData)
   return;
 }
 
-static void ConvertUnstructuredGridToPolyData(vtkAlgorithmOutput * outputPort, vtkPolyData * polyData)
+static void ConvertDataSetToSurface(
+    vtkAlgorithmOutput * outputPort,
+    vtkPolyData * polyData)
 {
   vtkSmartPointer< vtkDataSetSurfaceFilter > dataSetSurfaceFilter =
     vtkSmartPointer< vtkDataSetSurfaceFilter >::New();
@@ -127,19 +129,22 @@ static void ReadLegacyVTK(const char * file_name, vtkPolyData * polyData)
     }
   else if (NULL != reader->GetUnstructuredGridOutput())
     {
-    ConvertUnstructuredGridToPolyData(reader->GetOutputPort(), polyData);
+    ConvertDataSetToSurface(reader->GetOutputPort(), polyData);
     }
   else if (NULL != reader->GetStructuredPointsOutput())
     {
-    std::cerr << "unsupported: vtkStructuredPoints\n";
+    ConvertDataSetToSurface(reader->GetOutputPort(), polyData);
+    //std::cerr << "unsupported: vtkStructuredPoints\n";
     }
   else if (NULL != reader->GetStructuredGridOutput())
     {
-    std::cerr << "unsupported: vtkStructuredGrid\n";
+    ConvertDataSetToSurface(reader->GetOutputPort(), polyData);
+    //std::cerr << "unsupported: vtkStructuredGrid\n";
     }
   else if (NULL != reader->GetRectilinearGridOutput())
     {
-    std::cerr << "unsupported: vtkRectilinearGrid\n";
+    ConvertDataSetToSurface(reader->GetOutputPort(), polyData);
+    //std::cerr << "unsupported: vtkRectilinearGrid\n";
     }
   else
     {
@@ -147,21 +152,74 @@ static void ReadLegacyVTK(const char * file_name, vtkPolyData * polyData)
     }
 }
 
+int GetVTKStereoType(const QByteArray & stereoType) {
+  if (stereoType == "CRYSTAL_EYES")
+    {
+    return (VTK_STEREO_CRYSTAL_EYES);
+    }
+  else if (stereoType == "RED_BLUE")
+    {
+    return (VTK_STEREO_RED_BLUE);
+    }
+  else if (stereoType == "INTERLACED")
+    {
+    return (VTK_STEREO_INTERLACED);
+    }
+  else if (stereoType == "LEFT")
+    {
+    return (VTK_STEREO_LEFT);
+    }
+  else if (stereoType == "RIGHT")
+    {
+    return (VTK_STEREO_RIGHT);
+    }
+  else if (stereoType == "DRESDEN")
+    {
+    return (VTK_STEREO_DRESDEN);
+    }
+  else if (stereoType == "ANAGLYPH")
+    {
+    return (VTK_STEREO_ANAGLYPH);
+    }
+  else if (stereoType == "CHECKERBOARD")
+    {
+    return (VTK_STEREO_CHECKERBOARD);
+    }
+  #ifdef VTK_STEREO_SPLITVIEWPORT_HORIZONTAL
+  else if (stereoType == "SPLITVIEWPORT_HORIZONTAL")
+    {
+    return (VTK_STEREO_SPLITVIEWPORT_HORIZONTAL);
+    }
+  #endif
+  else
+    {
+      return -1;
+    }
+}
+
 VTKViewer::VTKViewer() :
-  renderer(vtkSmartPointer < vtkRenderer >::New())
+  m_renderer(vtkSmartPointer < vtkRenderer >::New())
 {
   vtkSmartPointer < vtkRenderWindow > renderWindow =
     vtkSmartPointer < vtkRenderWindow >::New();
   renderWindow->StereoCapableWindowOn();
-  renderWindow->SetStereoTypeToRedBlue();
-  renderWindow->AddRenderer(renderer);
-
-  renderer->ResetCamera();
+  renderWindow->AddRenderer(m_renderer);
+  QByteArray stereoType = qgetenv( "STEREO_TYPE" );
+  int vtkStereoType = GetVTKStereoType(stereoType);
+  if (vtkStereoType != -1)
+    {
+    renderWindow->SetStereoType(vtkStereoType);
+    }
+  else
+    {
+    renderWindow->SetStereoType(VTK_STEREO_RED_BLUE);
+    }
+  m_renderer->ResetCamera();
+  this->SetRenderWindow(renderWindow);
   this->resize(480, 480);
   this->setMinimumSize(480, 360);
-  this->SetRenderWindow(renderWindow);
-  connect(&(this->timer), SIGNAL(timeout()), this, SLOT(rotate()));
-  this->timer.start(66);
+  connect(&(m_timer), SIGNAL(timeout()), this, SLOT(rotate()));
+  m_timer.start(66);
 }
 
 void VTKViewer::add(vtkPolyData * polyData)
@@ -194,7 +252,7 @@ void VTKViewer::add(vtkPolyData * polyData)
     vtkSmartPointer < vtkActor >::New();
   actor->GetProperty()->SetPointSize(3);
   actor->SetMapper(mapper);
-  this->renderer->AddActor(actor);
+  m_renderer->AddActor(actor);
 }
 template <typename T>
 static void read(const char * file_name, vtkPolyData * polyData)
@@ -212,13 +270,13 @@ void VTKViewer::add(const char * file_name)
   vtkSmartPointer < vtkPolyData > polyData =
     vtkSmartPointer< vtkPolyData >::New();
   QString filename = QString::fromUtf8(file_name).toLower();
-  if (filename.endsWith(".vtp"))
-    {
-    read< vtkXMLPolyDataReader >(file_name, polyData);
-    }
-  else if (filename.endsWith(".vtk"))
+  if (filename.endsWith(".vtk"))
     {
     ReadLegacyVTK(file_name, polyData);
+    }
+  else if (filename.endsWith(".vtp"))
+    {
+    read< vtkXMLPolyDataReader >(file_name, polyData);
     }
   else if (filename.endsWith(".ply"))
     {
@@ -238,7 +296,7 @@ void VTKViewer::add(const char * file_name)
       vtkSmartPointer< vtkXMLUnstructuredGridReader >::New();
     reader->SetFileName(file_name);
     reader->Update();
-    ConvertUnstructuredGridToPolyData(reader->GetOutputPort(), polyData);
+    ConvertDataSetToSurface(reader->GetOutputPort(), polyData);
     }
   else if (filename.endsWith(".pdb"))
     {
@@ -247,44 +305,52 @@ void VTKViewer::add(const char * file_name)
   else
     {
     std::cerr << file_name
-      << ": BAD FILE NAME.  Should end in VTK, VTP, PLY, OBJ, STL, VTU, or PDB.\n";
+      << ": BAD FILE NAME.  "
+      "Should end in VTK, VTP, PLY, OBJ, STL, VTU, or PDB.\n";
     exit(1);
     return;
     }
   this->add(polyData);
 }
 
-void VTKViewer::toggle()
+void VTKViewer::toggleRotate()
 {
-  if (this->timer.isActive())
-    this->timer.stop();
+  if (m_timer.isActive())
+    m_timer.stop();
   else
-    this->timer.start(33);
+    m_timer.start(33);
 }
 
 void VTKViewer::rotate()
 {
-  vtkCamera * camera = this->renderer->GetActiveCamera();
+  vtkCamera * camera = m_renderer->GetActiveCamera();
   assert(camera != NULL);
   camera->Azimuth(1);
-  this->renderer->GetRenderWindow()->Render();
+  m_renderer->GetRenderWindow()->Render();
 }
 
-void VTKViewer::stereo()
+void VTKViewer::setStereoType(int vtkStereoType)
 {
-  vtkRenderWindow * rw = this->renderer->GetRenderWindow();
+  vtkRenderWindow * rw = m_renderer->GetRenderWindow();
+  assert(rw != NULL);
+  rw->SetStereoType(vtkStereoType);
+}
+
+void VTKViewer::toggleStereo()
+{
+  vtkRenderWindow * rw = m_renderer->GetRenderWindow();
   assert(rw != NULL);
   rw->SetStereoRender(! rw->GetStereoRender());
   rw->Render();
 }
 
-void VTKViewer::changeStereoType()
+void VTKViewer::nextStereoType()
 {
-  vtkRenderWindow * rw = this->renderer->GetRenderWindow();
+  vtkRenderWindow * rw = m_renderer->GetRenderWindow();
   assert(rw != NULL);
   int type = rw->GetStereoType();
   type = (type % 9) + 1;
-  rw->SetStereoType(type);
+  this->setStereoType(type);
   switch(type)
     {
     case 1: cout << "VTK_STEREO_CRYSTAL_EYES\n"; break;

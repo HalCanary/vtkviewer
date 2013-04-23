@@ -60,13 +60,13 @@ int main(int argc, char ** argv) {
   QObject::connect(&q_shortcut, SIGNAL(activated()), &mw, SLOT(close()));
 
   QShortcut r_shortcut(QKeySequence(Qt::CTRL + Qt::Key_R), &mw);
-  QObject::connect(&r_shortcut, SIGNAL(activated()), &v, SLOT(toggle()));
+  QObject::connect(&r_shortcut, SIGNAL(activated()), &v, SLOT(toggleRotate()));
 
   QShortcut s_shortcut(QKeySequence(Qt::CTRL + Qt::Key_S), &mw);
-  QObject::connect(&s_shortcut, SIGNAL(activated()), &v, SLOT(stereo()));
+  QObject::connect(&s_shortcut, SIGNAL(activated()), &v, SLOT(toggleStereo()));
 
   QShortcut t_shortcut(QKeySequence(Qt::CTRL + Qt::Key_T), &mw);
-  QObject::connect(&t_shortcut, SIGNAL(activated()), &v, SLOT(changeStereoType()));
+  QObject::connect(&t_shortcut, SIGNAL(activated()), &v, SLOT(nextStereoType()));
 
   mw.setCentralWidget(&v);
   for (int i = 1; i < argc; ++i)

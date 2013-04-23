@@ -31,12 +31,13 @@ public:
   void add(const char * file_name);
 public slots:
   void rotate();
-  void toggle();
-  void stereo();
-  void changeStereoType();
+  void toggleRotate();
+  void toggleStereo();
+  void setStereoType(int vtkStereoType);
+  void nextStereoType();
 private:
-  QTimer timer;
-  vtkSmartPointer < vtkRenderer > renderer;
+  QTimer m_timer;
+  vtkSmartPointer < vtkRenderer > m_renderer;
 };
 
 #endif /* VTKVIEWER_H */
