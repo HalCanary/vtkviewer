@@ -144,16 +144,17 @@ class VTKViewer(object):
 			polyData = VTKViewer.readPolyData(
 				file_name, vtk.vtkXMLPolyDataReader)
 		elif file_name_lower.endswith(".ply"):
-			polyData = VTKViewer.readPolyData(file_name, vtk.vtkPLYReader)
+			polyData = VTKViewer.readPolyData(
+				file_name, vtk.vtkPLYReader)
 		elif file_name_lower.endswith(".obj"):
-			polyData = VTKViewer.readPolyData(file_name, vtk.vtkOBJReader)
+			polyData = VTKViewer.readPolyData(
+				file_name, vtk.vtkOBJReader)
 		elif file_name_lower.endswith(".stl"):
-			polyData = VTKViewer.readPolyData(file_name, vtk.vtkSTLReader)
+			polyData = VTKViewer.readPolyData(
+				file_name, vtk.vtkSTLReader)
 		elif file_name_lower.endswith(".vtu"):
-			reader = vtk.vtkXMLUnstructuredGridReader()
-			reader.SetFileName(file_name)
-			reader.Update()
-			polyData = VTKViewer.ConvertDataSetToSurface(reader.GetOutputPort())
+			polyData = VTKViewer.readDataSet(
+				file_name, vtk.vtkXMLUnstructuredGridReader)
 		elif file_name_lower.endswith(".pdb"):
 			polyData = VTKViewer.ReadPDB(file_name)
 		elif file_name_lower.endswith(".vti"):
@@ -247,15 +248,16 @@ class VTKViewer(object):
 		reader = readerType()
 		reader.SetFileName(file_name)
 		reader.Update()
-		return VTKViewer.ConvertDataSetToSurface(reader.GetOutputPort())
+		return VTKViewer.ConvertDataSetToSurface(
+			reader.GetOutputPort())
 
 	@staticmethod
 	def ReadLegacyVTK(file_name):
 		reader = vtk.vtkDataSetReader()
 		reader.SetFileName(file_name)
 		reader.Update()
-		polyData = vtk.vtkPolyData()
 		if None != reader.GetPolyDataOutput():
+			polyData = vtk.vtkPolyData()
 			polyData.ShallowCopy(reader.GetPolyDataOutput())
 			return polyData
 		if None != reader.GetUnstructuredGridOutput():
