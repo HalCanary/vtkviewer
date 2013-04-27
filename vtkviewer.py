@@ -300,9 +300,13 @@ if __name__ == '__main__':
 		exit(1)
 	vtkviewer = VTKViewer()
 	for arg in sys.argv[1:]:
-		for fileName in glob.glob(arg):
-			if os.path.isfile(fileName):
-				vtkviewer.AddFile(fileName)
-			else:
-				print "what:", fileName
+		fileNames = glob.glob(arg)
+		if len(fileNames) == 0:
+			print "what:", arg
+		else:
+			for fileName in fileNames:
+				if os.path.isfile(fileName):
+					vtkviewer.AddFile(fileName)
+				else:
+					print "what:", fileName
 	vtkviewer.Start()
