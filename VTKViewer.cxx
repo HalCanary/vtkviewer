@@ -21,6 +21,9 @@
 #include <vtkPolyDataReader.h>
 #include <vtkPLYReader.h>
 #include <vtkXMLPolyDataReader.h>
+#include <vtkXMLStructuredGridReader.h>
+#include <vtkXMLImageDataReader.h>
+#include <vtkXMLRectilinearGridReader.h>
 #include <vtkRenderWindow.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkProperty.h>
@@ -116,6 +119,23 @@ static void ConvertDataSetToSurface(
   dataSetSurfaceFilter->SetInputConnection(outputPort);
   dataSetSurfaceFilter->Update();
   polyData->ShallowCopy(dataSetSurfaceFilter->GetOutput());
+}
+template <typename T>
+static void read(const char * file_name, vtkPolyData * polyData)
+{
+  vtkSmartPointer< T > reader = vtkSmartPointer< T >::New();
+  reader->SetFileName(file_name);
+  reader->Update();
+  polyData->ShallowCopy(reader->GetOutput());
+}
+
+template <typename T>
+static void readDataSet(const char * file_name, vtkPolyData * polyData)
+{
+  vtkSmartPointer< T > reader = vtkSmartPointer< T >::New();
+  reader->SetFileName(file_name);
+  reader->Update();
+  ConvertDataSetToSurface(reader->GetOutputPort(), polyData);
 }
 static void ReadLegacyVTK(const char * file_name, vtkPolyData * polyData)
 {
@@ -254,15 +274,6 @@ void VTKViewer::add(vtkPolyData * polyData)
   actor->SetMapper(mapper);
   m_renderer->AddActor(actor);
 }
-template <typename T>
-static void read(const char * file_name, vtkPolyData * polyData)
-{
-    vtkSmartPointer< T > reader =
-      vtkSmartPointer< T >::New();
-    reader->SetFileName(file_name);
-    reader->Update();
-    polyData->ShallowCopy(reader->GetOutput());
-}
 
 void VTKViewer::add(const char * file_name)
 {
@@ -301,6 +312,18 @@ void VTKViewer::add(const char * file_name)
   else if (filename.endsWith(".pdb"))
     {
     ReadPDB(file_name, polyData);
+    }
+  else if (filename.endsWith(".vti"))
+    {
+    readDataSet< vtkXMLImageDataReader >(file_name, polyData);
+    }
+  else if (filename.endsWith(".vts"))
+    {
+    readDataSet< vtkXMLStructuredGridReader >(file_name, polyData);
+    }
+  else if (filename.endsWith(".vtr"))
+    {
+    readDataSet< vtkXMLRectilinearGridReader >(file_name, polyData);
     }
   else
     {
