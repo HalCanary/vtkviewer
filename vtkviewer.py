@@ -87,6 +87,7 @@ import glob
 class VTKViewer(object):
 	def __init__(self):
 		self.renWin = vtk.vtkRenderWindow()
+		self.renWin.SetSize(800,600)
 		self.renWin.SetWindowName("VTK Viewer")
 		self.iren = vtk.vtkRenderWindowInteractor()
 		self.iren.SetRenderWindow(self.renWin)
