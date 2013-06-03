@@ -35,6 +35,7 @@ public slots:
   void toggleStereo();
   void setStereoType(int vtkStereoType);
   void nextStereoType();
+  void screenshot();
 private:
   QTimer m_timer;
   vtkSmartPointer < vtkRenderer > m_renderer;

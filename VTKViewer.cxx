@@ -27,6 +27,7 @@
 #include <vtkOBJReader.h>
 #include <vtkPDBReader.h>
 #include <vtkPLYReader.h>
+#include <vtkPNGWriter.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
@@ -38,6 +39,7 @@
 #include <vtkSTLReader.h>
 #include <vtkTubeFilter.h>
 #include <vtkVersion.h>
+#include <vtkWindowToImageFilter.h>
 #include <vtkXMLImageDataReader.h>
 #include <vtkXMLPolyDataReader.h>
 #include <vtkXMLRectilinearGridReader.h>
@@ -386,3 +388,19 @@ void VTKViewer::nextStereoType()
   rw->Render();
 }
 
+void VTKViewer::screenshot()
+{
+  vtkSmartPointer< vtkWindowToImageFilter > windowToImageFilter =
+    vtkSmartPointer< vtkWindowToImageFilter >::New();
+  windowToImageFilter->SetInput( this->GetRenderWindow() );
+  windowToImageFilter->SetMagnification(2);
+  windowToImageFilter->SetInputBufferTypeToRGBA();
+  windowToImageFilter->Update();
+  vtkSmartPointer< vtkPNGWriter > writer =
+    vtkSmartPointer< vtkPNGWriter >::New();
+  writer->SetInputConnection(windowToImageFilter->GetOutputPort());
+  const char filename[] = "/tmp/screenshot.png";
+  writer->SetFileName(filename);
+  writer->Write();
+  cout << filename << '\n';
+}

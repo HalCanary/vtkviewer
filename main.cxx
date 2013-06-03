@@ -24,6 +24,13 @@
 
 #include "VTKViewer.h"
 
+static void makeShortcut(
+    int key, QWidget & parent, QWidget & target, const char * slot) {
+  QObject::connect(
+      new QShortcut(QKeySequence(key), &parent),
+      SIGNAL(activated()), &target, slot);
+}
+
 int main(int argc, char ** argv) {
   if (argc == 1)
     {
@@ -46,27 +53,22 @@ int main(int argc, char ** argv) {
       "  'ctrl-r' - toggle rotation\n"
       "  'ctrl-s' - toggle stereo mode\n"
       "  'ctrl-t' - change stereo type\n"
+      "  'ctrl-p' - screenshot\n"
       "More Info:\n"
       "  https://github.com/HalCanary/vtkviewer\n\n";
     return 1;
     }
-  
+
   QApplication app(argc, argv);
   QMainWindow mw;
-	mw.setWindowTitle("VTK Viewer");
+  mw.setWindowTitle("VTK Viewer");
   VTKViewer v;
 
-  QShortcut q_shortcut(QKeySequence(Qt::CTRL + Qt::Key_Q), &mw);
-  QObject::connect(&q_shortcut, SIGNAL(activated()), &mw, SLOT(close()));
-
-  QShortcut r_shortcut(QKeySequence(Qt::CTRL + Qt::Key_R), &mw);
-  QObject::connect(&r_shortcut, SIGNAL(activated()), &v, SLOT(toggleRotate()));
-
-  QShortcut s_shortcut(QKeySequence(Qt::CTRL + Qt::Key_S), &mw);
-  QObject::connect(&s_shortcut, SIGNAL(activated()), &v, SLOT(toggleStereo()));
-
-  QShortcut t_shortcut(QKeySequence(Qt::CTRL + Qt::Key_T), &mw);
-  QObject::connect(&t_shortcut, SIGNAL(activated()), &v, SLOT(nextStereoType()));
+  makeShortcut(Qt::CTRL + Qt::Key_Q, mw, mw, SLOT(close()));
+  makeShortcut(Qt::CTRL + Qt::Key_R, mw, v, SLOT(toggleRotate()));
+  makeShortcut(Qt::CTRL + Qt::Key_S, mw, v, SLOT(toggleStereo()));
+  makeShortcut(Qt::CTRL + Qt::Key_T, mw, v, SLOT(nextStereoType()));
+  makeShortcut(Qt::CTRL + Qt::Key_P, mw, v, SLOT(screenshot()));
 
   mw.setCentralWidget(&v);
   for (int i = 1; i < argc; ++i)
