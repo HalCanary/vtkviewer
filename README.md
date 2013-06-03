@@ -18,11 +18,22 @@ Supported File Formats
 
 *	VTK — VTK Legacy File
 *	VTP — VTK Polygonal Data File
+*	VTU — VTK Unstructured Grid Data File
+*	VTI — VTK Image Data File
+*	VTS — VTK Structured Grid Data File
+*	VTR — VTK Rectilinear Grid Data File
 *	PLY — Stanford Polygon File
 *	OBJ — Wavefront Object file
 *	STL — Stereolithography File
 *	PDB — Protein Data Bank File
-*	VTU — VTK Unstructured Grid Data File
+
+Volumetric datasets are converted to surfaces using vtkDataSetSurfaceFilter.
+
+If the STEREO_TYPE environment variable is set to "CRYSTAL_EYES", "RED_BLUE", "INTERLACED", "LEFT", "RIGHT", "DRESDEN", "ANAGLYPH", "CHECKERBOARD", or "SPLITVIEWPORT_HORIZONTAL", the corresponding VTK stereo type is set via vtkRenderWindow::SetStereoType().
+
+If there is a scalar data array defined for the dataset, it is displayed on the resulting surface with a white-to-red colormap.
+
+If the surface lacks normals, they are added with the vtkPolyDataNormals filter.
 
 Required Packages:
 ------------------
@@ -69,3 +80,4 @@ Controls:
 *	'ctrl-r' — toggle rotation
 *	'ctrl-s' — toggle stereo mode
 *	'ctrl-t' — change stereo type
+*	'ctrl-p' — screenshot
