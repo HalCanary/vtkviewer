@@ -15,6 +15,8 @@
 // implied.  See the License for the specific language governing
 // permissions and limitations under the License.
 
+#include <QtGui>
+
 #include <iostream>
 
 #include <vtkAppendPolyData.h>
@@ -45,6 +47,14 @@
 #include <vtkXMLRectilinearGridReader.h>
 #include <vtkXMLStructuredGridReader.h>
 #include <vtkXMLUnstructuredGridReader.h>
+
+#include <vtkPerlinNoise.h>
+#include <vtkSampleFunction.h>
+#include <vtkImageShiftScale.h>
+#include <vtkImageMirrorPad.h>
+#include "vtkOpenGL3DTexture.h"
+#include "vtkTextureCoordOpenGLActor.h"
+
 #if VTK_MAJOR_VERSION <= 5
   #define setInputData(x,y) ((x)->SetInput(y))
   #define addInputData(x,y) ((x)->AddInput(y))
@@ -270,11 +280,67 @@ void VTKViewer::add(vtkPolyData * polyData)
     {
     setInputData(mapper, polyData);
     }
-  vtkSmartPointer < vtkActor > actor =
-    vtkSmartPointer < vtkActor >::New();
-  actor->GetProperty()->SetPointSize(3);
-  actor->SetMapper(mapper);
-  m_renderer->AddActor(actor);
+  bool USE_PERLIN_TEXTURE = true;
+  if (USE_PERLIN_TEXTURE) {
+    int textureSize = 128;
+    vtkSmartPointer< vtkPerlinNoise > perlinFunction =
+      vtkSmartPointer< vtkPerlinNoise >::New();
+    double frequency = 5;
+    perlinFunction->SetFrequency( frequency, frequency, frequency );
+    vtkSmartPointer< vtkSampleFunction > perlinSampler =
+      vtkSmartPointer< vtkSampleFunction >::New();
+    perlinSampler->SetImplicitFunction( perlinFunction );
+    perlinSampler->SetSampleDimensions( textureSize, textureSize, textureSize );
+    perlinSampler->SetModelBounds( -1, 1, -1, 1, -1, 1 );
+    perlinSampler->ComputeNormalsOff();
+    perlinSampler->Update();
+    // Change the range of the noise to between 0 and 1
+    double range[2];
+    perlinSampler->GetOutput()->GetScalarRange( range );
+    double newMin = 0.4;
+    double newMax = 1.0;
+
+    vtkSmartPointer< vtkImageShiftScale > perlinScaler =
+      vtkSmartPointer< vtkImageShiftScale >::New();
+    perlinScaler->SetOutputScalarTypeToFloat();
+    double scale = (newMax - newMin) / (range[1] - range[0]);
+    double shift = (newMin - range[0]*scale) / scale;
+    perlinScaler->SetShift( shift );
+    perlinScaler->SetScale( scale );
+    perlinScaler->SetInputConnection( perlinSampler->GetOutputPort() );
+    perlinScaler->Update();
+    perlinScaler->GetOutput()->GetScalarRange( range );
+
+    vtkSmartPointer< vtkImageMirrorPad > perlinPadder =
+      vtkSmartPointer< vtkImageMirrorPad >::New();
+    perlinPadder->SetOutputWholeExtent(
+        0, 2*textureSize-1, 0, 2*textureSize-1, 0, 2*textureSize-1 );
+    perlinPadder->SetInputConnection( perlinScaler->GetOutputPort() );
+
+    vtkSmartPointer< vtkOpenGL3DTexture > shapeTexture
+      = vtkSmartPointer< vtkOpenGL3DTexture >::New();
+    shapeTexture->SetInputConnection( perlinPadder->GetOutputPort() );
+    shapeTexture->SetInputConnection( perlinPadder->GetOutputPort() );
+    shapeTexture->RepeatOn();
+    shapeTexture->InterpolateOn();
+    shapeTexture->SetBlendingMode(
+        vtkTexture::VTK_TEXTURE_BLENDING_MODE_MODULATE);
+    shapeTexture->SetQualityTo32Bit();
+
+    vtkSmartPointer< vtkTextureCoordOpenGLActor > isoSurfaceGeometryActor
+      = vtkSmartPointer< vtkTextureCoordOpenGLActor >::New();
+    isoSurfaceGeometryActor->SetTexture(shapeTexture);
+    double textureCoordinateScale = 1.0;
+    isoSurfaceGeometryActor->SetTextureScale(textureCoordinateScale );
+    isoSurfaceGeometryActor->SetMapper(mapper);
+    m_renderer->AddActor(isoSurfaceGeometryActor);
+  } else {
+    vtkSmartPointer < vtkActor > actor =
+      vtkSmartPointer < vtkActor >::New();
+    actor->GetProperty()->SetPointSize(3);
+    actor->SetMapper(mapper);
+    m_renderer->AddActor(actor);
+  }
 }
 
 void VTKViewer::add(const char * file_name)
@@ -404,3 +470,4 @@ void VTKViewer::screenshot()
   writer->Write();
   cout << filename << '\n';
 }
+

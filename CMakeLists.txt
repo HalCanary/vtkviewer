@@ -25,5 +25,10 @@ find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
 include(${QT_USE_FILE})
 add_definitions(${QT_DEFINITIONS})
 qt4_wrap_cpp(MOC_GENERATED VTKViewer.h)
-add_executable(vtkviewer main.cxx VTKViewer.cxx ${MOC_GENERATED})
+add_executable(vtkviewer
+  main.cxx
+  VTKViewer.cxx
+  vtkOpenGL3DTexture.cxx
+  vtkTextureCoordOpenGLActor.cxx
+  ${MOC_GENERATED})
 target_link_libraries(vtkviewer ${VTK_LIBRARIES} QVTK ${QT_QTOPENGL_LIBRARY})
