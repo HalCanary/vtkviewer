@@ -107,14 +107,18 @@ class VTKViewer(object):
 		self.renWin.Render()
 		self.iren.Start()
 
-	def AddPolyData(self,polyData):
-		dataRange = polyData.GetScalarRange()
+	@staticmethod
+	def GetDefaultColorMap(dataRange):
 		colorMap = vtk.vtkColorTransferFunction()
 		colorMap.SetColorSpaceToLab()
 		colorMap.AddRGBPoint(dataRange[0], 0.865, 0.865, 0.865)
 		colorMap.AddRGBPoint(dataRange[1], 0.706, 0.016, 0.150)
 		colorMap.Build()
+		return colorMap
 
+	def AddPolyData(self, polyData, colorMap=None):
+		if colorMap is None:
+			colorMap = VTKViewer.GetDefaultColorMap(polyData.GetScalarRange())
 		polyDataMapper = vtk.vtkPolyDataMapper()
 		polyDataMapper.SetLookupTable(colorMap)
 
