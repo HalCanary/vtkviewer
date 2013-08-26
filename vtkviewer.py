@@ -141,7 +141,7 @@ class VTKViewer(object):
 		actor.SetMapper(polyDataMapper)
 		self.renderer.AddActor(actor)
 
-	def AddFile(self, file_name):
+	def AddFile(self, file_name, colorMap=None):
 		file_name_lower = file_name.lower()
 		if file_name_lower.endswith('.vtk'):
 			polyData = VTKViewer.ReadLegacyVTK(file_name)
@@ -175,7 +175,7 @@ class VTKViewer(object):
 			print file_name, ": BAD FILE NAME.  Should end",
 			print "in VTK, VTP, PLY, OBJ, STL, VTU, or PDB."
 			raise Exception()
-		self.AddPolyData(polyData)
+		self.AddPolyData(polyData, colorMap)
 		return
 
 	@staticmethod
