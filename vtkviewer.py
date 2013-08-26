@@ -56,6 +56,9 @@ Set the STEREO_TYPE environment variable to control stereo type.
 	STEREO_TYPE=ANAGLYPH
 	STEREO_TYPE=CHECKERBOARD
 	STEREO_TYPE=SPLITVIEWPORT_HORIZONTAL
+
+Set the COLORMAP environment variable to change the scalar color map.
+It should be the location of a ParaView-style xml colormap file.
 """
 
 useage = """
@@ -82,6 +85,7 @@ import vtk
 import sys
 import os
 import glob
+import xml.etree.ElementTree
 
 
 class VTKViewer(object):
@@ -116,7 +120,83 @@ class VTKViewer(object):
 		colorMap.Build()
 		return colorMap
 
+	@staticmethod
+	def LoadColorMap(file_name):
+		"""
+		ParaView has a XML colormap format:
+		<ColorMap space="RGB">
+		  <Point x="0.0"  r="0.0"      g="0.0"      b="0.0"/>
+		  <Point x="0.4"  r="0.901961" g="0.0"      b="0.0"/>
+		  <Point x="0.8"  r="0.901961" g="0.901961" b="0.0"/>
+		  <Point x="1.0"  r="1.0"      g="1.0"      b="1.0"/>
+		  <NaN            r="0.0"      g="0.498039" b="1.0"/>
+		</ColorMap>
+		"""
+		colorMap = vtk.vtkColorTransferFunction()
+		root = xml.etree.ElementTree.parse(file_name).getroot()
+		if root.tag != "ColorMap":
+			raise Exception('Wrong Kind of XML File')
+			return None
+		if "space" in root.attrib:
+			space = root.attrib["space"]
+			if space == "RGB":
+				colorMap.SetColorSpaceToRGB()
+			elif space == "Lab":
+				colorMap.SetColorSpaceToLab()
+			elif space == "Wrapped":
+				colorMap.SetColorSpaceToHSV()
+				colorMap.HSVWrapOn()
+			elif space == "Diverging":
+				colorMap.SetColorSpaceToDiverging()
+			else:
+				colorMap.SetColorSpaceToHSV()
+		else:
+			colorMap.SetColorSpaceToHSV()
+		point_found = False
+		for point in root:
+			if point.tag == "Point":
+				point_found = True
+				a, r,g,b, h,s,v = 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+				if 'x' not in point.attrib:
+					continue
+				x = float(point.attrib['x'])
+				if 'o' in point.attrib:
+					a = float(point.attrib['o'])
+				if 'r' in point.attrib:
+					if 'g' not in point.attrib or 'b' not in point.attrib:
+						continue
+					r = float(point.attrib['r'])
+					g = float(point.attrib['g'])
+					b = float(point.attrib['b'])
+					colorMap.AddRGBPoint(x, r, g, b)
+				elif 'h' in point.attrib:
+					if 's' not in point.attrib or 'v' not in point.attrib:
+						continue
+					h = float(point.attrib['h'])
+					s = float(point.attrib['s'])
+					v = float(point.attrib['v'])
+					colorMap.AddHSVPoint(x, h, s, v)
+				else: ## 'r' or 'h' required
+					continue
+			elif point.tag == "NaN":
+				r, g, b = 0.25, 0.0, 0.0
+				if 'r' in point.attrib:
+					r = float(point.attrib['r'])
+				if 'g' in point.attrib:
+					g = float(point.attrib['g'])
+				if 'b' in point.attrib:
+					b = float(point.attrib['b'])
+				colorMap.SetNanColor(r, g, b)
+				## NAN doesn't support HSV.  Why not?
+		if not point_found:
+			return None
+		colorMap.Build()
+		return colorMap
+
 	def AddPolyData(self, polyData, colorMap=None):
+		"""
+		colorMap should be a vtkScalarsToColors (or derived class) object
+		"""
 		if colorMap is None:
 			colorMap = VTKViewer.GetDefaultColorMap(polyData.GetScalarRange())
 		polyDataMapper = vtk.vtkPolyDataMapper()
@@ -304,6 +384,12 @@ if __name__ == '__main__':
 		print useage
 		exit(1)
 	vtkviewer = VTKViewer()
+
+	if "COLORMAP" in os.environ:
+		colormap = VTKViewer.LoadColorMap(os.environ["COLORMAP"])
+	else:
+		colormap = None
+
 	for arg in sys.argv[1:]:
 		fileNames = glob.glob(arg)
 		if len(fileNames) == 0:
@@ -311,7 +397,7 @@ if __name__ == '__main__':
 		else:
 			for fileName in fileNames:
 				if os.path.isfile(fileName):
-					vtkviewer.AddFile(fileName)
+					vtkviewer.AddFile(fileName,colormap)
 				else:
 					print "what:", fileName
 	vtkviewer.Start()
